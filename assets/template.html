@@ -1,0 +1,504 @@
+﻿{{Main}}
+<div class='cb-main'>
+		<div class='cb-top'>
+		    {[CommentBTop]}
+		</div>
+		<!--评论总框架要有一个id='cb{[aid]}'，和对应函数一起配置-->
+		<div class='cb-cm' id='cb{[aid]}'>
+		{[Comments]}
+		</div>
+		<!--评论总框架要有一个id='cbbt{[aid]}'，和对应函数一起配置-->
+		<div class='cb-bottom' id='cbbt{[aid]}'>
+		    {[CommentBBottom]}
+		   <!--<h2>共x条评论</h2>-->
+		</div>
+</div>
+<style>
+.cb-main {
+    position:relative;
+	padding: 0 0 4em;
+	text-align: left;
+	margin:10px 10px 0 10px;
+}
+
+.cb-main .cb-top textarea {
+	display: block;
+	border: 0;
+	padding: .5em .7em;
+	margin: 0;
+	box-sizing: border-box;
+	width: 100%;
+	resize: none;
+	background: #EEE;
+	border-radius: .3em;
+	font-size: 15px;
+}
+
+.cb-main .cb-top .ahref {
+	margin-left: 0.5em;
+	text-decoration: none;
+	color: rgba(0, 0, 0, 0.5);
+	font-weight: 500;
+}
+
+.cb-main .cb-top .emotions {
+	margin: 10px 0 10px .5em;
+}
+
+.cb-main .cb-top .emotions .ahref {
+	margin: 0 10px 0 0;
+	font-size: 15px;
+	color: #424242;
+}
+
+.cb-main .cb-top .emotions button {
+	cursor: pointer;
+	border: 0;
+	float: right;
+	border-radius: .3em;
+	margin-top: 10px;
+	padding: 5px 1em;
+	color: #FFF;
+	background-color: #0080FF;
+	font-weight: bold;
+	transform: translateY(-50%);
+}
+
+.cb-main .cb-top .user {
+	margin-bottom: 10px;
+	color: rgba(0, 0, 0, 0.5);
+	font-weight: bold;
+}
+
+.cb-cm ul {
+	list-style-type: none;
+	margin: 0 0 .5em 0;
+}
+
+.cb-cm .avatar {
+	border-radius: 100%;
+	width: 1em;
+}
+
+.cb-cm .cb-itemhead {
+    position: relative;
+	font-weight: 600;
+	line-height: 2;
+	font-size: 15px;
+}
+
+.cb-cm .cb-item {
+	margin-top: .5em;
+}
+
+.cb-cm .cb-subitem {
+	margin-top: .5em;
+}
+
+.cb-cm .cb-itemhead img {
+	display: inline-block;
+	vertical-align: top;
+	width: 2em;
+	height: 2em;
+	border-radius: 100%;
+	margin-right: .2em;
+}
+
+.cb-cm .cb-itemct {
+	margin-left: 2.2em;
+	font-size: 15px;
+	line-height: 1.2;
+	padding-right: 10px;
+	word-wrap: break-word;
+    word-break: normal;
+}
+.cb-itemct a{
+	color:#2E9AFE;
+	text-decoration:none;
+	transition:1s ease;
+}
+.cb-itemct a:hover{
+    color:#2E64FE;
+}
+.cb-itemct .cb-itembt {
+	font-size: 10px;
+	margin-top: 10px;
+	color: #848484;
+}
+
+.cb-itembt .reply {
+	color: #848484;
+	text-decoration: none;
+	margin-left: 10px;
+}
+.cb-itembt .reply:hover{
+    color:#6E6E6E;
+}
+.cb-itembt .delete{
+    margin-left: 2px;
+}
+
+.cb-subitem .cb-itemhead {
+	font-size: 10px;
+	text-overflow: ellipsis;
+}
+.cb-itemhead .cb-site{
+    text-decoration:none;
+	color:#2E2E2E;
+	transition:1s ease;
+}
+.cb-itemhead .cb-site:hover{
+	color:#848484;
+}
+
+.cb-subitem .cb-itemct {
+	font-size: 10px;
+}
+
+.cb-subitem .cb-itemhead img {
+	width: 1.8em;
+	height: 1.8em;
+	margin-right: .2em;
+	vertical-align: text-top;
+}
+
+.cb-subitem .cb-itemct .cb-itembt {
+	margin-top: 5px;
+}
+
+.cb-main .cb-bottom {
+	width: 100%;
+}
+
+.cb-bottom h2 {
+	width: 100%;
+	text-align: center;
+	margin-top:50px;
+	font-size: 2em;
+	font-weight: 300;
+	color: #848484;
+}
+.cb-bottom h2 a{
+    text-decoration:none;
+	color: #848484;
+	transition:0.5s ease;
+}
+.cb-bottom h2 a:hover{
+	color: #2E2E2E;
+}
+.cb-main .emotionpanel{
+    position:absolute;
+	z-index:-1;
+	width:100%;
+	background-color:rgba(230,230,230,0.8);
+	border-radius: .3em;
+	word-wrap: break-word;
+	opacity:0;
+	min-height:120px;
+	transition:1s ease;
+} 
+.emotionpanel .em-single{
+    text-decoration:none;
+    color:#848484;
+	font-size:1em;
+	font-weight:600;
+	margin:5px 10px 5px 10px;
+	line-height:2.5;
+	white-space:nowrap;
+	transition:1s ease;
+} 
+.emotionpanel .em-single:hover{
+    font-size:1.1em;
+	color:#424242;
+}
+.cb-main .replyto{
+    display:none;
+    font-size:.9em;
+	font-weight:bold;
+    border-radius:.3em;
+    position:relative;
+    color:#A4A4A4;
+	padding:10px 10px 10px 10px;
+	overflow:hidden;
+    background-color:rgba(242, 242, 242,0.5);
+}
+.replyto .close{
+    position:absolute;
+    color:#424242;
+    text-decoration:none;
+	font-size:2em;
+	top:50%;
+	transform:translateY(-55%);
+	right:10px;
+	line-height:1;
+}
+.cb-cm .moresub{
+    margin-top: .3em;
+}
+.cb-cm .moresub a{
+    color: #848484;
+    text-decoration: none;
+    margin-left: 2.2em;
+    font-size: 10px;
+}
+.cb-cm .cb-pics,.cb-cm .cb-subpics{
+    display:table;
+	margin-top:2px;
+}
+.cb-cm .cb-picitems{
+margin-top:4px;
+float:left;
+position:relative;
+width:54px;
+height:54px;
+border-radius:4px;
+overflow:hidden;
+background:url('') no-repeat;
+background-size:cover;
+background-position:center center;
+margin-right:4px;
+}
+.cb-cm .cb-subpicitems{
+    width:45px;
+    height:45px;
+}
+.cb-picitems a{
+    background-color:black;
+	opacity:0.2;
+    padding:0 0 100% 100%;
+	transition:0.5s ease;
+}
+.cb-picitems a:hover{
+	opacity:0;
+}
+.cb-itemhead .topo{
+    position:absolute;
+    width:1em;
+	height:1em;
+	border-radius:50%;
+	top:50%;
+	right:1em;
+	background-color:rgba(254, 154, 46,0.5);
+	transform:translateY(-50%);
+}
+.cb-itemhead .topgo{
+    background-color:rgba(250, 88, 88,0.5);
+}
+</style>
+<script>
+/*CB.s()=getElementById*/
+function cbeclose{[aid]}(){
+     var e=CB.s('cbep{[aid]}');
+	 e.style.zIndex=-1;
+	 e.style.opacity=0;
+	 e.removeEventListener('mouseleave',cbeclose{[aid]});
+}
+function cbemotions{[aid]}(){
+     console.log('选择表情');
+     var e=CB.s('cbep{[aid]}'),text=CB.s('c{[aid]}');
+	 e.innerHTML='';
+	 var emotionlist=['(๑•̀ㅂ•́)و✧','Σ( ° △ °|||)︴','<(￣︶￣)>','o(*≧▽≦)ツ','(⊙x⊙;)','o(≧口≦)o','╮（╯＿╰）╭','(＠_＠;)','(°ー°〃)','ヽ(=^･ω･^=)丿','┗( T﹏T )┛','(*￣3￣)╭','( ͡° ͜ʖ ͡°)','（ ￣ー￣）','(눈_눈)','( *・ω・)✄╰ひ╯','(✧◡✧)','（〃｀ 3′〃）'];
+	 for(var i in emotionlist){
+	     e.innerHTML+='<a href=\'xxx\' class=\'em-single\'>'+emotionlist[i]+'</a>';
+	 }
+	 var ema=document.getElementsByClassName('em-single');
+	 for(var i in ema){
+	    if(ema[i] instanceof Element) ema[i].addEventListener('click',function(e){
+		     e.preventDefault();
+			 text.value+=this.innerHTML.replace(/\&lt;/g,'<').replace(/\&gt;/g,'>');
+			 cbeclose{[aid]}();
+		});
+	 }
+	 e.style.zIndex=2;
+	 e.style.opacity=1;
+	 e.addEventListener('mouseleave',cbeclose{[aid]});
+}
+function cbpics{[aid]}(){
+     var pics=['bmp','jpg','jpeg','png','tif','gif','pcx','svg','webp'],url=prompt('输入图片url\nPS:图片url要添加到评论最后方','')||'',text=CB.s('c{[aid]}');;
+	 var parsed=url.split('.'),prefix=parsed[parsed.length-1];
+	 if(url.indexOf('https://')!==-1&&pics.indexOf(prefix)!==-1){
+	      text.value+='\n '+url+' ';
+	 }else{
+	     if(url) alert('必须要是https协议下的*图片*url');
+	 }
+}
+function comment{[aid]}(){
+     var akey='{[akey]}',aid='{[aid]}',content=CB.s('c{[aid]}').value;
+	 /*Comment.B提交函数*/
+	 CB.sm(akey,aid,'cb{[aid]}',content,function(){
+	     CB.s('c{[aid]}').value='';
+		 delreply{[aid]}();/*发出去后取消回复*/
+	 });
+}
+function reply{[aid]}(el){
+     /*Comment.B回复设定函数,这里传进去的元素id会自动替换{[mrid]}*/
+     CB.rp(el.getAttribute('rid'),'{[aid]}','{[aid]}rpct{[mrid]}',function(name){
+	      CB.s('replytowho{[aid]}').innerHTML=name;
+	      CB.s('replyto{[aid]}').style.display='block';
+	 });
+}
+function delete{[aid]}(el){
+     /*Comment.B删除评论函数*/
+	 if(confirm('真的要删除这条评论吗?')){
+     CB.del(el.getAttribute('rid'),'{[akey]}',function(){
+	       alert('评论删除成功');
+	 });
+	 }
+}
+function delreply{[aid]}(){
+/*Comment.B取消回复设定函数*/
+	 CB.crp('{[aid]}',function(){
+	    CB.s('replyto{[aid]}').style.display='none';
+	 });
+}
+function moresub{[aid]}(el){
+/*Comment.B获取更多子回复函数,{[mrid]}会在稍后自动替换*/
+     CB.mr('{[akey]}',el.getAttribute('mrid'),el.getAttribute('rpart'),'{[aid]}','{[aid]}rpct{[mrid]}',true,function(ifmore,where,mrid){
+	      var btn=CB.s('{[aid]}msb'+mrid);
+	      if(!ifmore){
+		      btn.style.display='none';
+		  }else{
+		      btn.setAttribute('rpart',where);
+		  }
+	 });
+}
+function more{[aid]}(){
+     CB.mr('{[akey]}','','','{[aid]}','cb{[aid]}',false,function(ifmore,btnhtml){
+	     var btn=CB.s('cbbt{[aid]}');
+		 btn.innerHTML=btnhtml;
+	 });
+}
+function logout(){
+     if(confirm('是否要登出？')) CB.s('logout{[aid]}').submit();
+}
+function login(){
+     CB.s('login{[aid]}').submit();
+}
+</script>
+{{MainEnd}}
+<!--为了防止redirect网址里面的请求符例如?在层层oauth过程中丢失，特采用表单post方式-->
+{{NoLoginTop}}
+<form action='{[mainpath]}oa/' method='post' id='login{[aid]}'>
+<input type='hidden' name='r' value='{[nowpath]}'></input>
+</form>
+<div class='user' id='cb-user'><a onclick='login()' href='javascript:void(0);' class='ahref'>使用github账号登录</a></div>
+{{NoLoginTopEnd}}
+
+{{LoginTop}}
+<form action='{[mainpath]}u.php?q=destroy' method='post' id='logout{[aid]}'>
+<input type='hidden' name='r' value='{[nowpath]}'></input>
+</form>
+<div class='user' id='cb-user'>{[user]}<a onclick='logout()' href='javascript:void(0);' class='ahref'>切换账号</a></div>
+<div class='replyto' id='replyto{[aid]}'>Reply to: <span id='replytowho{[aid]}'>xxx</span><a href='javascript:void(0);' onclick='delreply{[aid]}()' class='close'>×</a></div>
+<div class='emotionpanel' id='cbep{[aid]}'></div>
+<textarea rows="4" cols="30" name='c' id='c{[aid]}' placeholder='写写想法~'></textarea>
+<div class='emotions'><a href='javascript:void(0);' onclick='cbemotions{[aid]}()' class='ahref'>表情</a><a href='javascript:void(0);' onclick='cbpics{[aid]}()' class='ahref'>图片</a><button onclick='comment{[aid]}()'>弹射</button></div>
+{{LoginTopEnd}}
+
+{{CommentItem}}
+<div class='cb-item'>
+   <div class='cb-itemhead'>
+	<img class='avatar' src='{[Avatar]}'></img><a href='{[Blog]}' class='cb-site' target='_blank'>{[UserName]}</a>
+   </div>
+   <div class='cb-itemct'>
+		    {[Content]}
+    {[CommentPics]}
+   <div class='cb-itembt'>
+   <span class='time'>{[Date]}</span>{[ReplyBtn]}{[DeleteBtn]}
+   </div>
+  </div>
+</div>
+<ul><div id='{[aid]}rpct{[rid]}'>{[ReplyContent]}</div>{[MoreSubBtn]}</ul><!--ReplyContainer必须设定该div处的id，用于动态载入回复层，元素id根据函数配置-->
+{{CommentItemEnd}}
+
+{{CommentTopItem}}
+<div class='cb-item'>
+   <div class='cb-itemhead'>
+	<img class='avatar' src='{[Avatar]}'></img><a href='{[Blog]}' class='cb-site' target='_blank'>{[UserName]}</a><div class='topo'></div>
+   </div>
+   <div class='cb-itemct'>
+		    {[Content]}
+    {[CommentPics]}
+   <div class='cb-itembt'>
+   <span class='time'>{[Date]}</span>{[ReplyBtn]}{[DeleteBtn]}
+   </div>
+  </div>
+</div>
+<ul><div id='{[aid]}rpct{[rid]}'>{[ReplyContent]}</div>{[MoreSubBtn]}</ul><!--ReplyContainer必须设定该div处的id，用于动态载入回复层，元素id根据函数配置-->
+{{CommentTopItemEnd}}
+
+{{CommentGlobalTopItem}}
+<div class='cb-item'>
+   <div class='cb-itemhead'>
+	<img class='avatar' src='{[Avatar]}'></img><a href='{[Blog]}' class='cb-site' target='_blank'>{[UserName]}</a><div class='topo topgo'></div>
+   </div>
+   <div class='cb-itemct'>
+		    {[Content]}
+    {[CommentPics]}
+   <div class='cb-itembt'>
+   <span class='time'>{[Date]}</span>{[ReplyBtn]}{[DeleteBtn]}
+   </div>
+  </div>
+</div>
+<ul><div id='{[aid]}rpct{[rid]}'>{[ReplyContent]}</div>{[MoreSubBtn]}</ul><!--ReplyContainer必须设定该div处的id，用于动态载入回复层，元素id根据函数配置-->
+{{CommentGlobalTopItemEnd}}
+
+{{CommentReplyItem}}
+<li class='cb-subitem'>
+   <div class='cb-itemhead'>
+	<img class='avatar' src='{[Avatar]}'></img><a href='{[Blog]}' class='cb-site' target='_blank'>{[UserName]}</a>
+   </div>
+   <div class='cb-itemct'>
+		{[Content]}
+	{[CommentPics]}
+   <div class='cb-itembt'>
+   <span class='time'>{[Date]}</span>{[ReplyBtn]}{[DeleteBtn]}
+   </div>
+  </div>
+</li>
+{{CommentReplyItemEnd}}
+
+{{CommentPicsCon}}
+<div class='cb-pics'>
+   {[Pics]}
+</div>
+{{CommentPicsConEnd}}
+
+{{CommentReplyPicsCon}}
+<div class='cb-subpics'>
+   {[Pics]}
+</div>
+{{CommentReplyPicsConEnd}}
+
+{{CommentPics}}
+<div class='cb-picitems' style='background-image:url({[ImgUrl]})'><a href='{[ImgUrl]}' target='_blank'></a></div>
+{{CommentPicsEnd}}
+
+{{CommentReplyPics}}
+<div class='cb-picitems cb-subpicitems' style='background-image:url({[ImgUrl]})'><a href='{[ImgUrl]}' target='_blank'></a></div>
+{{CommentReplyPicsEnd}}
+
+{{Bottom}}
+<h2>共{[CommentsNum]}条评论</h2>
+{{BottomEnd}}
+
+{{BottomMore}}
+<h2><a href='javascript:void(0);' onclick='more{[aid]}()'>加载更多</a></h2>
+{{BottomMoreEnd}}
+
+{{NoConfigBottom}}
+<h2>该站点评论框无法光翼展开</h2>
+{{NoConfigBottomEnd}}
+
+{{ReplyBtn}}
+<a href='javascript:void(0);' class='reply' onclick='reply{[aid]}(this)' rid='{[rid]}'>回复</a><!--注意回复的模板中的onclick和rid-->
+{{ReplyBtnEnd}}
+
+{{DeleteBtn}}
+<a href='javascript:void(0);' class='reply delete' onclick='delete{[aid]}(this)' rid='{[rid]}'>删除</a>
+{{DeleteBtnEnd}}
+
+{{MoreSubBtn}}
+<!--rpart用于记录载入的进度，mrid是该层楼回复对应的主评论rid，一定要有mrid，元素id可对应函数进行配置-->
+<div class='moresub'><a href='javascript:void(0);' id='{[aid]}msb{[mrid]}' onclick='moresub{[aid]}(this)' mrid='{[mrid]}' rpart='{[rpart]}'>展开更多</a></div>
+{{MoreSubBtnEnd}}

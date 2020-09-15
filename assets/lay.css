@@ -1,0 +1,162 @@
+body{
+	width:70%;
+	height:100%;
+	margin:0 auto;
+}
+.hd{
+	position:relative;
+	display:block;
+	padding-top:20px;
+}
+.title,.ctrl,.desc{
+	margin:0 auto;
+}
+.title{
+	font-size:25px;
+}
+.desc{
+	line-height:40px;
+	text-overflow: ellipsis;
+    white-space: nowrap;
+	font-size:15px;
+	color:#A4A4A4;
+}
+.board{
+	margin-top:40px;
+	max-width:100%;
+}
+.bk{
+	float:left;
+	background-color:#F2F2F2;
+	width:200px;
+	height:100px;
+	border-radius:5px;
+	margin:10px;
+	padding:10px 0 10px 20px;
+	overflow-x:hidden;
+}
+.cr{
+	line-height:100px;
+	margin-left:60px;
+	font-weight:bold;
+}
+.wl{
+	color:#AAA;
+}
+.crtitle{
+	color:#6E6E6E;
+}
+.in{
+	color:#6E6E6E;
+	border:none;
+	background-color:#F2F2F2;
+	width:100%;
+	max-width:350px;
+	border-radius:10px;
+	padding:14px 10px 14px 10px;
+	font-size:20px;
+	outline: none;
+}
+.btn{
+	cursor:hand;
+	font-family:'\5FAE\8F6F\96C5\9ED1';
+	color:#FFF;
+	text-align:center;
+	border:none;
+	background-color:#0080FF;
+	width:auto;
+	border-radius:10px;
+	padding:5px 10px 5px 10px;
+	font-size:20px;
+	outline:none;
+	-webkit-appearance: none;
+	margin:10px 0 10px 10px;
+}
+.embed{
+	margin-bottom:2em;
+}
+.searchbtn{
+	margin:10px 0;
+}
+.subbtn{
+	margin-left:0;
+}
+.hiddenbtn{
+	display:none;
+}
+.topbtn{
+	background-color:#FAAC58;
+}
+.fopt{
+	position:fixed;
+	top:0;
+	left:0;
+	width:100%;
+	height:100%;
+	background-color:rgba(255, 255, 255,0.9);
+	z-index:-1;
+	opacity:0;
+	transition:1s ease;
+}
+.optct{
+    position:fixed;
+	width:100%;
+	top:50%;
+	left:50%;
+	text-align:center;
+	transform:translate(-50%,-50%);
+}
+.rs{
+	margin-left:10px;
+	color:#AAA;
+}
+.rs-content{
+	margin:5px 5px;
+}
+.rs-title{
+	margin:10px 0 10px 0;
+	word-wrap: break-word;
+    word-break: normal;
+}
+.rs-url{
+	margin:2px 0 2px 5px;
+	word-wrap: break-word;
+    word-break: normal;
+}
+.rs-links{
+	margin-bottom:10px;
+}
+.delbtn{
+	background-color:#DF0101;
+}
+textarea{
+	overflow:auto;
+font-family:'\5FAE\8F6F\96C5\9ED1';color:#6E6E6E;text-align:left;border:0;background-color:#F2F2F2;width:100%;max-width:350px;border-radius:10px;padding:14px 10px 14px 10px;font-size:20px;outline:0;
+}
+a{
+	color:#2E9AFE;
+	text-decoration:none;
+	transition:1s ease;
+	margin-right:6px;
+}
+a:hover{
+	color:#2E64FE;
+}
+.nt{
+	position:fixed;
+	z-index:10;
+	left:0;
+	top:-80px;
+	opacity:0;
+	overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+	color:#FFF;
+	background-color:#2E9AFE;
+	width:100%;
+	height:80px;
+	text-align:center;
+	line-height:80px;
+	font-size:30px;
+	transition:1s ease;
+}

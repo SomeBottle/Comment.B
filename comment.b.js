@@ -1,3 +1,4 @@
+/*Comment.B Beta1.0*/
 var CB = {
     mainpath: './',
     gravatar: 'https://cn.gravatar.com/avatar/',
@@ -377,7 +378,7 @@ var CB = {
                         mrid = '';
                     if (j.code == 1) {
                         var elem = o.s(el);
-                        if (j.reply == 'true') {
+                        if (j.reply) {
                             var tp = o.csic(j.data, aid),
                                 mainrid = j.data.parentrid,
                                 sube = o.s(o.replylist[aid]['con'].rpl('mrid', mainrid)); /*获得子评论操作container*/

@@ -230,8 +230,8 @@ if ($action == 'verify') {
                     require p('frames/' . $frameid . '/' . $akey . '/index.php'); /*import floors index*/
                     $arr = array('rpnm' => $replyname, 'rid' => $comments, 'pics' => $pics, 'content' => base64_encode($content), 'unix' => time(), 'owner' => $uid, 'ua' => '', 'email' => md5($usr['email']), 'blog' => $usr['blog'], 'name' => $usr['name']);
                     $arr['rprid'] = $ifreply ? $_POST['rp'] : 0; /*记录回复的主评论id*/
-                    file_put_contents(p('frames/' . $frameid . '/' . $akey . '/c' . $comments . '.php'), fileconst(array('cm' => $arr)));
-                    $rt['code'] = 1;
+                    $commentarr = $arr; /*储存评论文件内容*/
+                    $commentsuccess = true; /*记录是否评论成功*/
                     if (!$ifreply) { /*非回复模式*/
                         $floorindex = array('m' => $comments, 'r' => array()); /*回复模块*/
                         array_unshift($floors, $floorindex); /*将新增评论加到顶部*/
@@ -250,20 +250,24 @@ if ($action == 'verify') {
                             $arr['parentrid'] = $parentrid; /*提供主评论的RID*/
                             array_splice($floors[$cid]['r'], $subcid + 1, 0, array(0 => $floorindex)); /*将新增评论加到子评论下方，这里有个arraysplice的奇怪问题，需要再套一个数组，太怪了*/
                         } else { /*找不到回复的评论*/
-                            $rt['code'] = 0;
+                            $commentsuccess = false;
                             $rt['msg'] = '找不到要回复的评论';
                         }
                     }
-                    $comments+= 1; /*评论序列*/
-                    $commentsnum+= 1; /*评论总数*/
-                    $commentsin+= 1; /*用户在duration内评论的数量*/
-                    file_put_contents(p('frames/' . $frameid . '/' . $akey . '/index.php'), fileconst(array('comments' => $comments, 'thetop' => $thetop, 'commentsnum' => $commentsnum, 'orgakey' => $orgakey, 'floors' => $floors)));
-                    $arr['content'] = $content;
-                    $arr['owner'] = true; /*是评论主，可以删除评论*/
-                    unset($arr['unix']);
-                    $arr['date'] = date('Y年n月j日', time());
-                    $rt['data'] = $arr; /*返回到前端*/
-                    $rt['reply'] = $ifreply ? 'true' : 'false';
+                    if ($commentsuccess) {
+                        file_put_contents(p('frames/' . $frameid . '/' . $akey . '/c' . $comments . '.php'), fileconst(array('cm' => $commentarr)));
+                        $comments+= 1; /*评论序列*/
+                        $commentsnum+= 1; /*评论总数*/
+                        $commentsin+= 1; /*用户在duration内评论的数量*/
+                        file_put_contents(p('frames/' . $frameid . '/' . $akey . '/index.php'), fileconst(array('comments' => $comments, 'thetop' => $thetop, 'commentsnum' => $commentsnum, 'orgakey' => $orgakey, 'floors' => $floors)));
+                        $arr['content'] = $content;
+                        $arr['owner'] = true; /*是评论主，可以删除评论*/
+                        unset($arr['unix']);
+                        $arr['date'] = date('Y年n月j日', time());
+                        $rt['data'] = $arr; /*返回到前端*/
+                        $rt['reply'] = $ifreply ? true : false;
+                    }
+                    $rt['code'] = $commentsuccess ? 1 : 0;
                 } else {
                     $rt['code'] = 0;
                     $rt['msg'] = '评论太长';

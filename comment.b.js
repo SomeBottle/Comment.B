@@ -316,6 +316,10 @@ var CB = {
     },
     rp: function(rid, aid, container, cb) { /*回复处理函数(rid，aid，回复操作容器,callback)*/
         var o = this;
+        if (o.framesown[aid].user == '') {
+            alert('请登录后再回复');
+            return false;
+        }
         o.replylist[aid] = {
             rid: rid,
             con: container

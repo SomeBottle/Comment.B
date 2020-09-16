@@ -30,6 +30,7 @@ var CB = {
                                     user = j['name'];
                                     tp = o.tpgetter('login', aid).rpl('user', user);
                                 } else if (code == 0) {
+                                    user = '';
                                     tp = o.tpgetter('notlogin', aid);
                                 } else {
                                     alert('评论框初始化失败：500');
@@ -220,6 +221,8 @@ var CB = {
     tploaded: '',
     ls: new Array(),
     lss: '',
+    sendqueue: {},
+    /*记录框架发送评论的队列，防止一次多发*/
     atoprid: {},
     /*记录局部置顶评论的rid，用来避免渲染列表时再次出现*/
     gtoprid: {},
@@ -347,46 +350,52 @@ var CB = {
     sm: function(akey, aid, el, ct, cb) { /*提交用函数(akey，aid, 评论部分容器元素ID，提交内容,callback(返回数据,mrid))*/
         var o = this;
         o.replylist[aid] = o.replylist[aid] || {};
-        var frameid = o.framesid[akey],
-            replyto = o.replylist[aid]['rid'] == 0 ? 0 : (o.replylist[aid]['rid'] || false);
-        if (!o.ce(ct)) {
-            alert('不要说空气哦');
-            return false;
-        }
-        var data = {
-            a: akey,
-            c: encodeURIComponent(ct),
-            id: frameid,
-            rpnm: ''
-        };
-        if (replyto || replyto == 0) data['rp'] = replyto, data['rpnm'] = o.cmindex[replyto] /*判断是否是回复*/
-        else data['rp'] = 'false';
-        o.rq(o.mainpath + 'c.php?a=sm', data, {
-            success: function(m) {
-                var j = JSON.parse(m),
-                    mrid = '';
-                if (j.code == 1) {
-                    var elem = o.s(el);
-                    if (j.reply == 'true') {
-                        var tp = o.csic(j.data, aid),
-                            mainrid = j.data.parentrid,
-                            sube = o.s(o.replylist[aid]['con'].rpl('mrid', mainrid)); /*获得子评论操作container*/
-                        sube.innerHTML = tp + sube.innerHTML;
-                        mrid = mainrid;
-                    } else {
-                        var tp = o.cic(j.data, aid).rpl('ReplyContent', '').rpl('MoreSubBtn', '');
-                        elem.innerHTML = tp + elem.innerHTML;
-                    }
-                    o.cmindex[j.data.rid] = j.data.name; /*储存rid对应的用户*/
-                    cb(j, mrid); /*callback*/
-                } else {
-                    alert(j.msg || '评论发布失败');
-                }
-            },
-            failed: function(m) {
-                alert('评论发布失败');
+        if (!o.sendqueue[aid]) { /*计入队列，防止撞车*/
+            var frameid = o.framesid[akey],
+                replyto = o.replylist[aid]['rid'] == 0 ? 0 : (o.replylist[aid]['rid'] || false);
+            o.sendqueue[aid] = true;
+            if (!o.ce(ct)) {
+                alert('不要说空气哦');
+                o.sendqueue[aid] = false;
+                return false;
             }
-        }, 'post');
+            var data = {
+                a: akey,
+                c: encodeURIComponent(ct),
+                id: frameid,
+                rpnm: ''
+            };
+            if (replyto || replyto == 0) data['rp'] = replyto, data['rpnm'] = o.cmindex[replyto] /*判断是否是回复*/
+            else data['rp'] = 'false';
+            o.rq(o.mainpath + 'c.php?a=sm', data, {
+                success: function(m) {
+                    var j = JSON.parse(m),
+                        mrid = '';
+                    if (j.code == 1) {
+                        var elem = o.s(el);
+                        if (j.reply == 'true') {
+                            var tp = o.csic(j.data, aid),
+                                mainrid = j.data.parentrid,
+                                sube = o.s(o.replylist[aid]['con'].rpl('mrid', mainrid)); /*获得子评论操作container*/
+                            sube.innerHTML = tp + sube.innerHTML;
+                            mrid = mainrid;
+                        } else {
+                            var tp = o.cic(j.data, aid).rpl('ReplyContent', '').rpl('MoreSubBtn', '');
+                            elem.innerHTML = tp + elem.innerHTML;
+                        }
+                        o.cmindex[j.data.rid] = j.data.name; /*储存rid对应的用户*/
+                        cb(j, mrid); /*callback*/
+                    } else {
+                        alert(j.msg || '评论发布失败');
+                    }
+                    o.sendqueue[aid] = false;
+                },
+                failed: function(m) {
+                    alert('评论发布失败');
+                    o.sendqueue[aid] = false;
+                }
+            }, 'post');
+        }
     },
     mr: function(akey, mrid, rpart, aid, el, ifsub = false, cb) { /*展开更多-(akey,mrid，rpart,aid,元素id,是否展开的是子回复，callback<sub>(是否还有更多,目前切割到了哪里,mrid))*/
         var o = this,

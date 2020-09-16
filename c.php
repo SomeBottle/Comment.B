@@ -112,6 +112,9 @@ function mainrenderer($floors, $frameid, $akey) {
 $usr = $_SESSION['commentuser']; /*get user details*/
 $uid = $usr['id'];
 if ($action == 'verify') {
+    if (isset($usr) && isset($uid) && !empty($uid) && !file_exists(p('users/' . $uid . '.php'))) {
+        file_put_contents(p('users/' . $uid . '.php'), fileconst(array('myindex' => array(), 'myframes' => array(), 'lastcount' => 0, 'commentsin' => 0)));
+    }
     $dm = filter($_POST['dm']); /*get domain*/
     require p('frameindex.php'); /*import frameindex*/
     $frameid = '';

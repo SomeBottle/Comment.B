@@ -24,7 +24,7 @@ if(isset($pararr['error'])){
 	$detail=json_decode($userd,true);
 	if(isset($detail['login'])){
 	   $email=$detail['email'];
-	   $name=$detail['name'];
+	   $name=$detail['name'] ? $detail['name'] : $detail['login'];
 	   $id=$detail['id'];
 	   $blog=$detail['blog'];
 	   session_start();

@@ -22,7 +22,7 @@ function filter($c) { /*xss过滤*/
     return str_ireplace(array("\r\n", "\r", "\n"), ' <br> ', addslashes(htmlspecialchars($c, ENT_QUOTES))); /*这里换行标签<br>刻意留了空格，因为在前端识别url的时候可能会连同br一同牵连进去*/
 }
 function picg($str) { /*字串符图片url提取器*/
-    $w = '/((http|https):\/\/)+(\S+\.)+(\S+)[\S\/\.\-]*(bmp|jpeg|jpg|gif|png|tif|pcx|svg|webp)/';
+    $w = '/((https):\/\/)+(\S+\.)+(\S+)[\S\/\.\-]*(bmp|jpeg|jpg|gif|png|tif|pcx|svg|webp)/';
     preg_match_all($w, $str, $urls);
     return array('u' => $urls[0], 's' => trim(preg_replace($w, '', $str)));
 }

@@ -1,8 +1,8 @@
-/*Comment.B Beta1.2*/
+/*Comment.B Beta1.4*/
 var CB = {
     mainpath: './',
     gravatar: 'https://cn.gravatar.com/avatar/',
-    ini: function() { /*initialization*/
+    ini: function() { /*initialization，必要函数初始化*/
         String.prototype.rpl = function(origin, to) { /*在String类型原型链上加一个简化replace的函数方法*/
             /*ExpReg需要转义一道，正则匹配还需要转义一道，就形成了反斜杠超级加倍*/
             return this.replace(new RegExp('\\{\\[' + origin + '\\]\\}', 'gi'), to);
@@ -12,14 +12,16 @@ var CB = {
             return ad.split(new RegExp('\\{\\{' + between + 'end\\}\\}', 'i'))[0];
         }
     },
-    const: function() {
+    const: function() { /*识别并构造评论框，梦开始的地方*/
         var o = this;
-        if (o.tploaded !== '') {
+        if (o.tploaded !== '') { /*哥们儿，模板加载了没？*/
             var all = document.getElementsByClassName('cm-b');
             for (var i in all) {
-                if (all[i] instanceof Element) {
+                if (all[i] instanceof Element) { /*兄die，你这要是元素才行啊*/
                     var akey = all[i].getAttribute('akey'),
                         aid = akey + o.id;
+                    if (!akey) break; /*如果不存在akey就给他一巴掌扇回去*/
+                    all[i].removeAttribute('akey'); /*过河拆akey，防止重复const.老铁们，我做的对吗？*/
                     o.temparse(aid, akey); /*重组模板*/
                     (function(e, key, aid) {
                         o.rq(o.mainpath + 'u.php', {}, {
@@ -89,7 +91,7 @@ var CB = {
                                 alert('评论框初始化失败：服务器连接失败');
                             }
                         }, 'get');
-                    })(all[i], akey, aid); /*闭包传参*/
+                    })(all[i], akey, aid); /*闭包传参，可以解决在for,while等循环中的变量恒定问题*/
                     o.id += 1;
                 }
             }
@@ -105,7 +107,7 @@ var CB = {
             }, 'get');
         }
     },
-    temparse: function(aid, akey) {
+    temparse: function(aid, akey) { /*模板一次处理*/
         var o = this,
             temp = o.tploaded.rpl('aid', aid).rpl('akey', akey).rpl('mainpath', o.mainpath).rpl('nowpath', window.location.href); /*加上特殊标识AID，值得注意的是这个不是akey文章标识符*/
         o.tpparser(temp, aid); /*拆分处理模板*/
@@ -146,11 +148,11 @@ var CB = {
         }
         return cmlist;
     },
-    ce: function(v) {
+    ce: function(v) { /*判断是否输入内容，老实说我自己都有点模糊这个是怎么用的了*/
         if (v == null || String(v) == 'undefined' || v.match(/^\s*$/)) return false
         else return true;
     },
-    tpparser: function(tp, aid) { /*评论框模板解释器*/
+    tpparser: function(tp, aid) { /*评论框模板解释器，模板二次处理*/
         var o = this,
             temps = ['main', 'nologintop', 'logintop', 'commentitem', 'commenttopitem', 'commentglobaltopitem', 'commentpicscon', 'commentpics', 'bottom', 'bottommore', 'noconfigbottom', 'replybtn', 'deletebtn', 'moresubbtn', 'commentreplyitem', 'commentreplypics', 'commentreplypicscon'];
         o.tpmd = o.tpmd || {};
@@ -164,7 +166,7 @@ var CB = {
         var rex = new RegExp('((https|http|ftp|rtsp|mms)?:\\/\\/)[^\\s]+', 'gi');
         c = c.replace(rex, function(url) {
             return '<a href="' + url + '" target="_blank">' + url + '</a>';
-        });
+        }); /*replace的奇妙用法，后面可以用函数回调，老铁们，你们学到了吗*/
         return c;
     },
     tpgetter: function(type, aid) { /*模板组装器*/
@@ -177,7 +179,7 @@ var CB = {
             return o.tpmd[aid]['main'].rpl('CommentBTop', '').rpl('CommentBBottom', o.tpmd[aid]['noconfigbottom']).rpl('Comments', '');
         }
     },
-    verify: function() {
+    verify: function() { /*验证评论框是否能在该页面展开*/
         var host = window.location.host,
             o = this;
         return new Promise(function(res, rej) {
@@ -198,7 +200,7 @@ var CB = {
     },
     rq: function(p, d, sf, m) { /*(path,data,success or fail,method,cookie)*/
         var xhr = new XMLHttpRequest();
-        xhr.withCredentials = true; /*解决跨域无cookie导致无法登录的问题*/
+        xhr.withCredentials = true; /*解决跨域无cookie导致无法登录的问题，这里在后端真的是很要加点东西，不得不说Chrome的跨域安全真的做的顶呱呱*/
         var hm = '';
         for (var ap in d) {
             hm = hm + ap + '=' + d[ap] + '&';
@@ -241,7 +243,7 @@ var CB = {
     /*以评论RID索引对应用户name，用于搭配reply*/
     id: 0,
     /*评论框ID*/
-    script: function(url) {
+    script: function(url) { /*往dom中增加script*/
         var script = document.createElement("script"),
             exist = false,
             o = this;
@@ -258,10 +260,10 @@ var CB = {
             document.body.appendChild(script);
         }
     },
-    s: function(id) {
+    s: function(id) { /*简单根据ID获取元素，当我写完comment.b时突然想起来，不是有querySelector嘛！*/
         return document.getElementById(id);
     },
-    ht: function(h, e) {
+    ht: function(h, e) { /*设置innerHTML的函数，对js执行有处理*/
         if (e instanceof Element) {
             ht = e;
             ht.innerHTML = h;
@@ -280,7 +282,7 @@ var CB = {
             }
         }
     },
-    cic: function(arr, aid, type = 'commentitem') { /*CommentItemConstructor*/
+    cic: function(arr, aid, type = 'commentitem') { /*CommentItemConstructor主评论构筑器*/
         var o = this,
             x = CB.framesown[aid],
             tp = o.tpmd[aid][type],
@@ -297,7 +299,7 @@ var CB = {
         pc = pc == '' ? pc : o.tpmd[aid]['commentpicscon'].rpl('Pics', pc);
         return tp.rpl('Avatar', o.gravatar + arr.email).rpl('UserName', arr.name).rpl('Content', o.renderurl(arr.content)).rpl('Date', arr.date).rpl('ReplyBtn', rptp).rpl('DeleteBtn', deltp).rpl('rid', arr.rid).rpl('CommentPics', pc).rpl('Blog', blog);
     },
-    csic: function(arr, aid) { /*CommentSubItemConstructor*/
+    csic: function(arr, aid) { /*CommentSubItemConstructor子评论构筑器*/
         var o = this,
             tp = o.tpmd[aid]['commentreplyitem'],
             x = CB.framesown[aid],

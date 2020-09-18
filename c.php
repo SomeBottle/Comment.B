@@ -2,6 +2,7 @@
 /*评论处理中枢*/
 error_reporting(E_ALL ^ E_NOTICE ^ E_WARNING);
 header('Content-type:text/json;charset=utf-8');
+header('Access-Control-Allow-Origin: *');
 date_default_timezone_set("Asia/Shanghai");
 $action = @$_GET['a'];
 $rt = array('code' => 0);
@@ -111,7 +112,12 @@ function mainrenderer($floors, $frameid, $akey) {
 @session_start();
 $usr = $_SESSION['commentuser']; /*get user details*/
 $uid = $usr['id'];
-if ($action == 'verify') {
+if ($action == 'tp') {
+    $template = file_get_contents('./assets/template.html');
+    echo $template;
+    session_write_close();
+    exit();
+} else if ($action == 'verify') {
     if (isset($usr) && isset($uid) && !empty($uid) && !file_exists(p('users/' . $uid . '.php'))) {
         file_put_contents(p('users/' . $uid . '.php'), fileconst(array('myindex' => array(), 'myframes' => array(), 'lastcount' => 0, 'commentsin' => 0)));
     }

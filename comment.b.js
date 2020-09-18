@@ -1,4 +1,4 @@
-/*Comment.B Beta1.0*/
+/*Comment.B Beta1.1*/
 var CB = {
     mainpath: './',
     gravatar: 'https://cn.gravatar.com/avatar/',
@@ -94,7 +94,7 @@ var CB = {
                 }
             }
         } else {
-            o.rq(o.mainpath + 'assets/template.html', {}, {
+            o.rq(o.mainpath + 'c.php?a=tp', {}, {
                 success: function(m) {
                     o.tploaded = m; /*获得到模板文件*/
                     return o.const(); /*重返构建*/

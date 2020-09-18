@@ -179,16 +179,18 @@ if ($action == 'tp') {
                 $atopdata = mainrenderer($akeytop, $frameid, $akey);
             }
             function getfloors($gk, $ak, $ori, $frameid) { /*获取全局评论对应的楼层*/
-                if ($gk == $ak) {
-                    return $ori;
+                if ($gk == $ak) { /*在当前页面*/
+                    return array('r' => $ori, 'e' => true);
                 } else {
                     require p('frames/' . $frameid . '/' . $gk . '/index.php'); /*获取楼层索引*/
-                    return $floors;
+                    return array('r' => $floors, 'e' => false);
                 }
             }
             if (isset($tops['c'])) { /*如果有全局置顶*/
                 $gkey = $tops['akey'];
-                $gfloors = getfloors($gkey, $akey, $floors, $frameid);
+                $gt = getfloors($gkey, $akey, $floors, $frameid);
+                $gfloors = $gt['r'];
+                $gea = $gt['e']; /*akey是否等于gkey，换而言之当前akey是不是全局置顶评论所属*/
                 $idrc = commentindexer($tops['c'], $gfloors) ['cid'];
                 if ($idrc !== 'failed') $globaltop = array(0 => $gfloors[$idrc]);
                 $gtopdata = mainrenderer($globaltop, $frameid, $gkey);
@@ -203,7 +205,7 @@ if ($action == 'tp') {
             }
             /*------------------main renderer----------------------*/
             $rt['data'] = mainrenderer($floors, $frameid, $akey);
-            $rt['tops'] = array('a' => $atopdata, 'g' => $gtopdata);
+            $rt['tops'] = array('a' => $atopdata, 'g' => $gtopdata, 'gea' => $gea);
         } else {
             $rt['code'] = 0;
         }

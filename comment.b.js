@@ -1,4 +1,4 @@
-/*Comment.B Beta1.4*/
+/*Comment.B Beta1.5*/
 var CB = {
     mainpath: './',
     gravatar: 'https://cn.gravatar.com/avatar/',
@@ -71,7 +71,7 @@ var CB = {
                                     if (m.code == 1) {
                                         var ts = m.tops,
                                             atopcmlist = o.floorrender(ts.a, aid, 'commenttopitem'),
-                                            gtopcmlist = o.floorrender(ts.g, aid, 'commentglobaltopitem'),
+                                            gtopcmlist = o.floorrender(ts.g, aid, 'commentglobaltopitem', ts.gea),
                                             topcmlist = gtopcmlist + atopcmlist; /*渲染置顶*/
                                         o.atoprid[aid] = ts.a ? ts.a[0].m.rid : false;
                                         o.gtoprid[aid] = ts.g ? ts.g[0].m.rid : false;
@@ -127,14 +127,14 @@ var CB = {
             rpart: rpart
         };
     },
-    floorrender: function(data, aid, type = 'commentitem') { /*主楼层渲染器*/
+    floorrender: function(data, aid, type = 'commentitem', renderbtn = true) { /*主楼层渲染器(数组,aid,渲染模板类型,是否渲染小按钮例如删除、回复)*/
         var o = this,
             cmlist = '';
         for (var cm in data) {
             var ct = data[cm],
                 rid = ct.m.rid;
             if (rid !== o.atoprid[aid]) {
-                var cmtp = o.cic(ct['m'], aid, type),
+                var cmtp = o.cic(ct['m'], aid, type, renderbtn),
                     sm = ct['r'] || {}; /*嵌套拉取回复层*/
                 o.cmindex[rid] = ct['m']['name']; /*存入rid索引用户名*/
                 var rprd = o.replyrender(sm, ct, aid),
@@ -282,13 +282,12 @@ var CB = {
             }
         }
     },
-    cic: function(arr, aid, type = 'commentitem') { /*CommentItemConstructor主评论构筑器*/
+    cic: function(arr, aid, type = 'commentitem', renderbtn = true) { /*CommentItemConstructor主评论构筑器(数组,aid,渲染模板类型,是否渲染小按钮例如删除、回复)*/
         var o = this,
             x = CB.framesown[aid],
             tp = o.tpmd[aid][type],
-            rptp = o.tpmd[aid]['replybtn'],
-            deltp = (x.
-            if ||(x.user == arr.name && x.ad)) ? o.tpmd[aid]['deletebtn'] : '',
+            rptp = renderbtn ? o.tpmd[aid]['replybtn'] : '',
+            deltp = (x.if ||(x.user == arr.name && x.ad)) ? (renderbtn ? o.tpmd[aid]['deletebtn'] : '') : '',
             picstp = o.tpmd[aid]['commentpics'],
             pics = arr.pics,
             pc = '',
@@ -304,8 +303,7 @@ var CB = {
             tp = o.tpmd[aid]['commentreplyitem'],
             x = CB.framesown[aid],
             rptp = o.tpmd[aid]['replybtn'],
-            deltp = (x.
-            if ||(x.user == arr.name && x.ad)) ? o.tpmd[aid]['deletebtn'] : '',
+            deltp = (x.if ||(x.user == arr.name && x.ad)) ? o.tpmd[aid]['deletebtn'] : '',
             rpname = arr.rpnm == '' ? '' : ' > ' + arr.rpnm,
             /*如果回复的不是子评论，子评论就不以xxxx > xxx的形式显示*/
             picstp = o.tpmd[aid]['commentreplypics'],

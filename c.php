@@ -2,13 +2,18 @@
 /*评论处理中枢*/
 error_reporting(E_ALL ^ E_NOTICE ^ E_WARNING);
 header('Content-type:text/json;charset=utf-8');
-header('Access-Control-Allow-Origin: *');
 date_default_timezone_set("Asia/Shanghai");
 $action = @$_GET['a'];
 $rt = array('code' => 0);
 /*Referer getter*/
 $referer = $_SERVER['HTTP_REFERER'];
 $rfhost = parse_url($referer, PHP_URL_HOST);
+$rfscheme = parse_url($referer, PHP_URL_SCHEME);
+$rfport = parse_url($referer, PHP_URL_PORT);
+$rfport = !empty($rfport) ? ':' . $rfport : '';
+header('Access-Control-Allow-Origin: ' . $rfscheme . '://' . $rfhost . $rfport);
+header('Access-Control-Allow-Credentials: true');
+/*因为前端请求附带withCredential才能在客户端储存cookie，但浏览器对此要求十分苛刻，故组装referer的部分以Access-Control-Allow-Origin头返回*/
 function config($k) {
     require 'config.php';
     return $config[$k];

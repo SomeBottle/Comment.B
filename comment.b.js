@@ -1,4 +1,4 @@
-/*Comment.B Beta1.1*/
+/*Comment.B Beta1.2*/
 var CB = {
     mainpath: './',
     gravatar: 'https://cn.gravatar.com/avatar/',
@@ -196,8 +196,9 @@ var CB = {
             }, 'post');
         });
     },
-    rq: function(p, d, sf, m) { /*(path,data,success or fail,method)*/
+    rq: function(p, d, sf, m) { /*(path,data,success or fail,method,cookie)*/
         var xhr = new XMLHttpRequest();
+        xhr.withCredentials = true; /*解决跨域无cookie导致无法登录的问题*/
         var hm = '';
         for (var ap in d) {
             hm = hm + ap + '=' + d[ap] + '&';

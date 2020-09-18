@@ -1,6 +1,7 @@
 <?php
 error_reporting(E_ALL ^ E_NOTICE ^ E_WARNING);
 header('Content-type:text/json;charset=utf-8');
+header('Access-Control-Allow-Origin: *');
 @session_start();
 $rs=array();
 $u=$_SESSION['commentuser'];

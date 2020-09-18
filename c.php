@@ -365,8 +365,8 @@ if ($action == 'tp') {
                     }
                     unset($floors[$cid]); /*删除评论索引*/
                     $commentsnum-= (count($subs) + 1); /*把楼层的子评论全算进去*/
-                    /*如果有置顶也一起删了*/
-                    if ($tops['c'] === $rid) {
+                    /*如果有置顶也一起删了，全局置顶rid相同的同时还要保证akey相同，不然会误删*/
+                    if ($tops['c'] === $rid && $tops['akey'] == $akey) {
                         $tops = array();
                         file_put_contents(p('frames/' . $frameid . '/topindex.php'), fileconst(array('tops' => $tops)));
                     } else if ($thetop['c'] === $rid) {

@@ -2,6 +2,8 @@
 ![banner](https://s1.ax1x.com/2020/09/16/wcIMSe.png)  
 *简单的无数据库评论框系统*
 
+示例视频：https://www.bilibili.com/video/BV1wD4y1o7b1  
+
 ---------------------------
 ![example](https://s1.ax1x.com/2020/09/16/wcIvXd.png)  
 ## 想法🤔  

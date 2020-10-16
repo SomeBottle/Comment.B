@@ -99,12 +99,17 @@ var CB = {
             o.rq(o.mainpath + 'c.php?a=tp', {}, {
                 success: function(m) {
                     o.tploaded = m; /*获得到模板文件*/
+					localStorage.commentbtp = m; /*缓存模板到本地*/
                     return o.const(); /*重返构建*/
                 },
                 failed: function(m) {
                     alert('评论框初始化失败：模板无法获取');
                 }
             }, 'get');
+			if(localStorage.commentbtp){
+				o.tploaded = localStorage.commentbtp;
+				return o.const(); /*重返构建*/
+			}
         }
     },
     temparse: function(aid, akey) { /*模板一次处理*/

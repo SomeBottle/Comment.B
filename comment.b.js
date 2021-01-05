@@ -1,4 +1,4 @@
-/*Comment.B Beta1.5*/
+/*Comment.B Beta1.6*/
 var CB = {
     mainpath: './',
     gravatar: 'https://cn.gravatar.com/avatar/',
@@ -24,6 +24,7 @@ var CB = {
                     all[i].removeAttribute('akey'); /*过河拆akey，防止重复const.老铁们，我做的对吗？*/
                     o.temparse(aid, akey); /*重组模板*/
                     (function(e, key, aid) {
+                        o.ht('<p style=\"line-height: 50px;text-align:center;color:#AAA;\">Comment.B Loading</p>', e);
                         o.rq(o.mainpath + 'u.php', {}, {
                             success: function(m) {
                                 var j = JSON.parse(m),
@@ -88,6 +89,7 @@ var CB = {
                                 });
                             },
                             failed: function(m) {
+                                o.ht('', e);
                                 alert('评论框初始化失败：服务器连接失败');
                             }
                         }, 'get');
@@ -99,17 +101,20 @@ var CB = {
             o.rq(o.mainpath + 'c.php?a=tp', {}, {
                 success: function(m) {
                     o.tploaded = m; /*获得到模板文件*/
-					localStorage.commentbtp = m; /*缓存模板到本地*/
+                    localStorage.commentbtp = m; /*缓存模板到本地*/
                     return o.const(); /*重返构建*/
                 },
                 failed: function(m) {
-                    alert('评论框初始化失败：模板无法获取');
+                    if (!localStorage.commentbtp) {
+                        o.ht('', e);
+                        alert('评论框初始化失败：模板无法获取');
+                    }
                 }
             }, 'get');
-			if(localStorage.commentbtp){
-				o.tploaded = localStorage.commentbtp;
-				return o.const(); /*重返构建*/
-			}
+            if (localStorage.commentbtp) {
+                o.tploaded = localStorage.commentbtp;
+                return o.const(); /*重返构建*/
+            }
         }
     },
     temparse: function(aid, akey) { /*模板一次处理*/
@@ -292,7 +297,8 @@ var CB = {
             x = CB.framesown[aid],
             tp = o.tpmd[aid][type],
             rptp = renderbtn ? o.tpmd[aid]['replybtn'] : '',
-            deltp = (x.if ||(x.user == arr.name && x.ad)) ? (renderbtn ? o.tpmd[aid]['deletebtn'] : '') : '',
+            deltp = (x.
+            if ||(x.user == arr.name && x.ad)) ? (renderbtn ? o.tpmd[aid]['deletebtn'] : '') : '',
             picstp = o.tpmd[aid]['commentpics'],
             pics = arr.pics,
             pc = '',
@@ -308,7 +314,8 @@ var CB = {
             tp = o.tpmd[aid]['commentreplyitem'],
             x = CB.framesown[aid],
             rptp = o.tpmd[aid]['replybtn'],
-            deltp = (x.if ||(x.user == arr.name && x.ad)) ? o.tpmd[aid]['deletebtn'] : '',
+            deltp = (x.
+            if ||(x.user == arr.name && x.ad)) ? o.tpmd[aid]['deletebtn'] : '',
             rpname = arr.rpnm == '' ? '' : ' > ' + arr.rpnm,
             /*如果回复的不是子评论，子评论就不以xxxx > xxx的形式显示*/
             picstp = o.tpmd[aid]['commentreplypics'],

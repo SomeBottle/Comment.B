@@ -27,6 +27,16 @@ function md516($v) {
 function filter($c) { /*xss过滤*/
     return str_ireplace(array("\r\n", "\r", "\n"), ' <br> ', addslashes(htmlspecialchars($c, ENT_QUOTES))); /*这里换行标签<br>刻意留了空格，因为在前端识别url的时候可能会连同br一同牵连进去*/
 }
+function getcommentowner($frameid, $akey, $cid) { /*根据commentid(cid)获取这条评论的主人的部分信息*/
+    if (file_exists(p('frames/' . $frameid . '/' . $akey . '/c' . $cid . '.php'))) {
+        require p('frames/' . $frameid . '/' . $akey . '/c' . $cid . '.php');
+        $owner = $cm['owner'];
+        require p('users/' . $owner . '.php');
+        return [$cm['name'], $mailbox, $cm['blog']];
+    } else {
+        return false;
+    }
+}
 function picg($str) { /*字串符图片url提取器*/
     $w = '/((https):\/\/)+(\S+\.)+(\S+)[\S\/\.\-]*(bmp|jpeg|jpg|gif|png|tif|pcx|svg|webp)/';
     preg_match_all($w, $str, $urls);
@@ -123,8 +133,9 @@ if ($action == 'tp') {
     session_write_close();
     exit();
 } else if ($action == 'verify') {
+    $usrmail = empty($usr['email']) ? '' : $usr['email'];
     if (isset($usr) && isset($uid) && !empty($uid) && !file_exists(p('users/' . $uid . '.php'))) {
-        file_put_contents(p('users/' . $uid . '.php'), fileconst(array('myindex' => array(), 'myframes' => array(), 'lastcount' => 0, 'commentsin' => 0)));
+        file_put_contents(p('users/' . $uid . '.php'), fileconst(array('mailbox' => $usrmail, 'myindex' => array(), 'myframes' => array(), 'lastcount' => 0, 'commentsin' => 0)));
     }
     $dm = filter($_POST['dm']); /*get domain*/
     require p('frameindex.php'); /*import frameindex*/
@@ -290,7 +301,8 @@ if ($action == 'tp') {
                 $rt['msg'] = '评论不能为空';
             }
         }
-        file_put_contents(p('users/' . $uid . '.php'), fileconst(array('myindex' => $myindex, 'myframes' => $myframes, 'lastcount' => $lastcount, 'commentsin' => $commentsin)));
+        $usrmail = empty($usr['email']) ? '' : $usr['email']; /*互动的时候顺带更新一下用户邮箱*/
+        file_put_contents(p('users/' . $uid . '.php'), fileconst(array('mailbox' => $usrmail, 'myindex' => $myindex, 'myframes' => $myframes, 'lastcount' => $lastcount, 'commentsin' => $commentsin)));
     } else {
         $rt['code'] = 0;
         $rt['msg'] = '未登录';

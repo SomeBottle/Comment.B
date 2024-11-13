@@ -4,7 +4,14 @@
 
 示例视频：https://www.bilibili.com/video/BV1wD4y1o7b1  
 
+
+## TODO 
+
+- [ ] 待用 Go 语言重写。  
+
 ---------------------------
+
+
 ![example](https://s1.ax1x.com/2020/09/16/wcIvXd.png)  
 ## 想法🤔  
 在多说离开后，我的博客暂且用上了卜卜口的<a href='http://comment.moe' target='_blank'>萌评论</a>，奈何后来卜卜口太忙<del>于粘土人</del>没啥时间维护项目了(°ー°〃)，于是我产生了自己专门整个能自己维护的评论框系统的想法（开坑日期2018-11-11<del>，我自己也是老咕咕了</del>）  

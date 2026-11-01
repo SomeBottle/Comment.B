@@ -134,7 +134,7 @@ func (s *Store) CommentCacheStatsLocked() CommentCacheStats {
 }
 
 // ClearCachesLocked 同时丢弃排序索引和正文；调用方必须持有 Store.Mu
-func (s *Store) ClearCachesLocked() { s.Cache.Clear(); s.comments.clear() }
+func (s *Store) ClearCachesLocked() { s.Cache.Clear(); s.comments.clear(); clear(s.frames) }
 
 // readCached 使用完整路径查找已校验正文，并再次检查原始页面作用域
 // 写入、删除及 Git 整合都在相同工作区锁内失效缓存，因此命中无需重新检查文件

@@ -65,6 +65,11 @@ func New(s *store.Store, a *auth.Auth, w *gitworker.Worker, c config.Config) htt
 	h := &Handler{Store: s, Auth: a, Worker: w, Config: c, buckets: make(map[string]bucket)}
 	mux := http.NewServeMux()
 	a.Register(mux)
+	mux.HandleFunc("POST /api/v1/frames", h.createFrame)
+	mux.HandleFunc("GET /api/v1/frames", h.listFrames)
+	mux.HandleFunc("GET /api/v1/frames/{frame_id}", h.getFrame)
+	mux.HandleFunc("PATCH /api/v1/frames/{frame_id}", h.updateFrame)
+	mux.HandleFunc("DELETE /api/v1/frames/{frame_id}", h.deleteFrame)
 	mux.HandleFunc("GET /api/v1/frames/{frame_id}/comments", h.listRoots)
 	mux.HandleFunc("GET /api/v1/frames/{frame_id}/comments/{root_id}/replies", h.listReplies)
 	mux.HandleFunc("POST /api/v1/frames/{frame_id}/comments", h.create)
@@ -98,7 +103,7 @@ func (h *Handler) middleware(next http.Handler) http.Handler {
 				writeError(w, 403, "ORIGIN_FORBIDDEN", "需要来源")
 				return
 			}
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token")
 			w.Header().Set("Access-Control-Max-Age", "600")
 			w.WriteHeader(204)
@@ -123,10 +128,14 @@ func writeError(w http.ResponseWriter, status int, code, message string) {
 // storeError 不将文件路径或系统错误泄露到公开响应，损坏分区明确告警
 func storeError(w http.ResponseWriter, err error) {
 	switch {
+	case errors.Is(err, store.ErrFrameNotFound):
+		writeError(w, 404, "FRAME_NOT_FOUND", "评论框不存在")
+	case errors.Is(err, store.ErrFrameLimit):
+		writeError(w, 409, "FRAME_LIMIT_REACHED", "已达到评论框创建数量上限")
 	case errors.Is(err, store.ErrNotFound):
 		writeError(w, 404, "COMMENT_NOT_FOUND", "评论不存在")
 	case errors.Is(err, store.ErrForbidden):
-		writeError(w, 403, "FORBIDDEN", "没有删除权限")
+		writeError(w, 403, "FORBIDDEN", "没有操作权限")
 	case errors.Is(err, store.ErrInvalid):
 		writeError(w, 400, "INVALID_REQUEST", "请求参数无效")
 	default:
@@ -135,18 +144,13 @@ func storeError(w http.ResponseWriter, err error) {
 	}
 }
 
-// frame 校验显式配置的评论框白名单，阻止任意目录膨胀
+// frame 校验路径语法，评论框存在性与归属由 Store 在同一工作区锁内核查
 func (h *Handler) frame(r *http.Request) (string, error) {
 	f := r.PathValue("frame_id")
 	if !config.ValidName(f) {
 		return "", store.ErrInvalid
 	}
-	for _, known := range h.Config.Frames {
-		if f == known {
-			return f, nil
-		}
-	}
-	return "", store.ErrNotFound
+	return f, nil
 }
 
 // query 拒绝重复参数和损坏的 URL 编码，避免不同中间件对同一请求解释不同
@@ -447,7 +451,7 @@ func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.Store.Mu.Lock()
-	err = h.Store.DeleteLocked(f, q.Get("page_key"), root, id, s.Author.ID, h.Auth.IsAdmin(s.Author.ID))
+	err = h.Store.DeleteLocked(f, q.Get("page_key"), root, id, s.Author.ID)
 	h.Store.Mu.Unlock()
 	if err != nil {
 		storeError(w, err)

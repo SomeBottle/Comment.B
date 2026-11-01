@@ -43,10 +43,10 @@ func TestReplyChainAndDurableDelete(t *testing.T) {
 	if _, _, err := s.ListLocked("blog", "p", a.ID, nil, false, 10); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.DeleteLocked("blog", "p", a.ID, c.ID, "github-2", false); !errors.Is(err, store.ErrForbidden) {
+	if err := s.DeleteLocked("blog", "p", a.ID, c.ID, "github-2"); !errors.Is(err, store.ErrForbidden) {
 		t.Fatal("允许越权删除")
 	}
-	if err := s.DeleteLocked("blog", "p", a.ID, c.ID, "github-1", false); err != nil {
+	if err := s.DeleteLocked("blog", "p", a.ID, c.ID, "github-1"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.ReadLocked("blog", "p", a.ID, d.ID); err != nil {
@@ -58,7 +58,7 @@ func TestReplyChainAndDurableDelete(t *testing.T) {
 	if _, err := s.CreateLocked("blog", "other", a.ID, &d.ID, "跨页", testutil.Author("1")); !errors.Is(err, store.ErrNotFound) {
 		t.Fatal("接受跨页引用", err)
 	}
-	if err := s.DeleteLocked("blog", "p", a.ID, a.ID, "github-1", false); err != nil {
+	if err := s.DeleteLocked("blog", "p", a.ID, a.ID, "github-1"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.ReadLocked("blog", "p", a.ID, d.ID); !errors.Is(err, store.ErrNotFound) {

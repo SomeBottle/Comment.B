@@ -98,6 +98,15 @@ func (c *Cache) Clear() {
 	}
 }
 
+// InvalidateFrame 仅丢弃指定评论框的全部页面和二级索引。
+func (c *Cache) InvalidateFrame(frame string) {
+	for k := range c.entries {
+		if k.Frame == frame {
+			c.Invalidate(k)
+		}
+	}
+}
+
 // remove 同步更新 LRU、映射和预算
 func (c *Cache) remove(e *list.Element) {
 	v := e.Value.(*entry)

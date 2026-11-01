@@ -42,9 +42,10 @@ type Config struct {
 	Listen                 string   `json:"listen"`
 	DataDir                string   `json:"data_dir"`
 	PublicURL              string   `json:"public_url"`
-	Frames                 []string `json:"frames"`
 	AllowedOrigins         []string `json:"allowed_origins"`
-	Admins                 []string `json:"admins"`
+	OpenToEveryone         bool     `json:"open_to_everyone"`    // OpenToEveryone 允许所有已登录用户创建评论框。
+	AllowedCreators        []string `json:"allowed_creators"`    // AllowedCreators 是受限创建模式下的完整身份白名单。
+	MaxFramesPerUser       int      `json:"max_frames_per_user"` // MaxFramesPerUser 限制每位用户当前拥有的有效评论框数量。
 	SessionKeyEnv          string   `json:"session_key_env"`
 	SessionTTL             Duration `json:"session_ttl"`
 	SecureCookies          bool     `json:"secure_cookies"`
@@ -73,7 +74,7 @@ type Config struct {
 
 // Defaults 采用设计第 6.1 节的建议值；没有来源的安装仍可公开读取
 func Defaults() Config {
-	return Config{Listen: "127.0.0.1:8080", DataDir: "./data", PublicURL: "http://localhost:8080", Frames: []string{"blog"},
+	return Config{Listen: "127.0.0.1:8080", DataDir: "./data", PublicURL: "http://localhost:8080", OpenToEveryone: false, MaxFramesPerUser: 3,
 		SessionKeyEnv: "COMMENTB_SESSION_KEY", SessionTTL: Duration(24 * time.Hour),
 		FirstLevelPageSize: 5, SecondLevelPreviewSize: 3, SecondLevelPageSize: 10, MaxPageLimit: 80, MaxPreviewLimit: 20,
 		MaxContentBytes: 16384, IndexCacheBudget: 64 << 20, CommentCacheBudget: 32 << 20, RateLimitPerMinute: 10,
@@ -130,27 +131,20 @@ func (c Config) Validate() error {
 	if c.SessionKeyEnv == "" || c.SessionTTL < Duration(time.Second) || c.SessionTTL > Duration(30*24*time.Hour) {
 		return errors.New("会话配置无效")
 	}
-	if len(c.Frames) == 0 {
-		return errors.New("frames 不能为空")
-	}
-	seen := map[string]bool{}
-	for _, f := range c.Frames {
-		if !ValidName(f) || seen[f] {
-			return fmt.Errorf("评论框无效或重复: %q", f)
-		}
-		seen[f] = true
-	}
 	for _, o := range c.AllowedOrigins {
 		if !Origin(o) {
 			return fmt.Errorf("CORS 来源无效: %q", o)
 		}
 	}
-	for _, id := range c.Admins {
-		raw := strings.TrimPrefix(id, "github-")
-		n, err := strconv.ParseUint(raw, 10, 64)
-		if err != nil || n == 0 || id != "github-"+strconv.FormatUint(n, 10) {
-			return errors.New("管理员必须是 github-<数字用户 ID>，不能使用昵称")
+	if c.MaxFramesPerUser < 1 {
+		return errors.New("max_frames_per_user 必须为正整数")
+	}
+	seen := map[string]bool{}
+	for _, id := range c.AllowedCreators {
+		if !ValidUserID(id) || seen[id] {
+			return errors.New("allowed_creators 必须是互不重复的 github-<数字用户 ID>")
 		}
+		seen[id] = true
 	}
 	if c.FirstLevelPageSize < 1 || c.SecondLevelPageSize < 1 || c.SecondLevelPreviewSize < 1 || c.MaxPageLimit > 500 || c.MaxPreviewLimit > 100 || c.FirstLevelPageSize > c.MaxPageLimit || c.SecondLevelPageSize > c.MaxPageLimit || c.SecondLevelPreviewSize > c.MaxPreviewLimit {
 		return errors.New("分页数量必须为正数且不超过上限（最大 500 / 100）")
@@ -173,6 +167,29 @@ func (c Config) Validate() error {
 		return errors.New("GitHub client_secret_env 不能为空")
 	}
 	return nil
+}
+
+// ValidUserID 仅接受 GitHub 数字身份的规范形式，昵称不参与授权。
+func ValidUserID(id string) bool {
+	raw := strings.TrimPrefix(id, "github-")
+	n, err := strconv.ParseUint(raw, 10, 64)
+	return err == nil && n > 0 && id == "github-"+strconv.FormatUint(n, 10)
+}
+
+// CanCreateFrame 返回创建资格，撤销资格不会移除已有评论框的所有权。
+func (c Config) CanCreateFrame(id string) bool {
+	if !ValidUserID(id) {
+		return false
+	}
+	if c.OpenToEveryone {
+		return true
+	}
+	for _, allowed := range c.AllowedCreators {
+		if allowed == id {
+			return true
+		}
+	}
+	return false
 }
 
 // SessionKey 返回共享的高熵密钥；不将其打印到日志或写入评论仓库

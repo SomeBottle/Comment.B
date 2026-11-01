@@ -108,7 +108,7 @@ func TestCommentCacheAdmissionAndDeletion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err = s.DeleteLocked("blog", "p", root.ID, replies[0].ID, "github-1", false); err != nil {
+	if err = s.DeleteLocked("blog", "p", root.ID, replies[0].ID, "github-1"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = s.ReadLocked("blog", "p", root.ID, replies[0].ID); !errors.Is(err, store.ErrNotFound) {
@@ -120,7 +120,7 @@ func TestCommentCacheAdmissionAndDeletion(t *testing.T) {
 	if _, err = s.ReadLocked("blog", "p", roots[1].ID, roots[1].ID); err != nil {
 		t.Fatal(err)
 	}
-	if err = s.DeleteLocked("blog", "p", root.ID, root.ID, "github-1", false); err != nil {
+	if err = s.DeleteLocked("blog", "p", root.ID, root.ID, "github-1"); err != nil {
 		t.Fatal(err)
 	}
 	if stats := s.CommentCacheStatsLocked(); stats.Entries != 1 {

@@ -63,6 +63,9 @@ func (w *Worker) StatusLocked() Status { return w.status }
 func roots(paths []string) ([]string, error) {
 	dirs := []string{}
 	for _, p := range paths {
+		if _, ok := store.ParseFramePath(p); ok {
+			continue
+		}
 		_, dir, ok := store.ParseCommentPath(p)
 		if !ok {
 			return nil, errors.New("评论仓库出现不受支持的路径或格式修改，请人工检查")
@@ -97,6 +100,9 @@ func (w *Worker) Recover(ctx context.Context) error {
 	}
 	dirs, err := roots(paths)
 	if err != nil {
+		return err
+	}
+	if err = w.Store.RepairFramesLocked(paths); err != nil {
 		return err
 	}
 	if err = w.Store.RepairLocked(dirs); err != nil {
@@ -271,6 +277,10 @@ func (w *Worker) syncLocked(ctx context.Context, push bool) (result error) {
 		}
 		w.Store.InvalidatePathsLocked(paths)
 	}()
+	if err = w.Store.RepairFramesLocked(changed); err != nil {
+		w.Store.Blocked = err
+		return err
+	}
 	if err = w.Store.RepairLocked(dirs); err != nil {
 		w.Store.Blocked = err
 		return err

@@ -3,6 +3,9 @@ package testutil
 
 import (
 	"context"
+	"encoding/json"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -34,6 +37,18 @@ func New(t testing.TB) *Fixture {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { s.Close() })
+	// blog 是兼容既有评论用例的显式框归属，普通测试用户 1 / 2 不具有该框管理权
+	frame := store.Frame{Version: 1, ID: "blog", OwnerID: "github-99", Name: "博客", Intro: "测试评论框", CreatedAt: time.Now().UnixMicro()}
+	b, err := json.Marshal(frame)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = os.WriteFile(filepath.Join(c.DataDir, "frames", "blog.json"), b, 0600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = r.Commit(context.Background()); err != nil {
+		t.Fatal(err)
+	}
 	return &Fixture{c, r, s}
 }
 

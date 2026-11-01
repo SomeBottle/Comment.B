@@ -179,13 +179,13 @@ func (r *Repo) Changed(ctx context.Context) ([]string, error) {
 			return nil, errors.New("无法解析 Git 状态")
 		}
 		p := v[3:]
-		if !strings.HasPrefix(p, "comments/") {
-			return nil, errors.New("数据仓库存在 comments 之外的修改，请人工检查")
+		if !dataPath(p) {
+			return nil, errors.New("数据仓库存在 comments 或 frames 之外的修改，请人工检查")
 		}
 		paths = append(paths, p)
 		if strings.ContainsAny(v[:2], "RC") {
 			i++
-			if i >= len(parts) || !strings.HasPrefix(parts[i], "comments/") {
+			if i >= len(parts) || !dataPath(parts[i]) {
 				return nil, errors.New("不允许跨评论目录的重命名")
 			}
 			paths = append(paths, parts[i])
@@ -196,7 +196,7 @@ func (r *Repo) Changed(ctx context.Context) ([]string, error) {
 
 // Commit 暂存净变更；退出码 1 仅在 diff --quiet 时表示确有差异
 func (r *Repo) Commit(ctx context.Context) (bool, error) {
-	if _, err := r.Run(ctx, "add", "-A", "--", "comments"); err != nil {
+	if _, err := r.Run(ctx, "add", "-A", "--", "comments", "frames"); err != nil {
 		return false, err
 	}
 	_, err := r.Run(ctx, "diff", "--cached", "--quiet", "--exit-code")
@@ -208,6 +208,11 @@ func (r *Repo) Commit(ctx context.Context) (bool, error) {
 	}
 	_, err = r.Run(ctx, "commit", "-m", "comments: batch update")
 	return err == nil, err
+}
+
+// dataPath 只允许评论和框元数据进入后台批量提交，配置与密钥不进入数据仓库。
+func dataPath(p string) bool {
+	return strings.HasPrefix(p, "comments/") || strings.HasPrefix(p, "frames/")
 }
 
 // Diff 返回文件树的净差异；禁用 rename 检测使两侧路径都能映射到分区

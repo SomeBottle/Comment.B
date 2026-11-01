@@ -19,12 +19,13 @@ import (
 
 // Store 的所有 Locked 方法必须持有 Mu，同一锁也覆盖 Git 和缓存构建
 type Store struct {
-	Mu         sync.Mutex    // Mu 保护整个工作区快照，第一版优先保证正确性
-	Cache      *cache.Cache  // Cache 不保存正文，不写入 Git
-	comments   *commentCache // comments 以独立预算缓存已解析正文，所有操作与文件写入共用 Mu
-	Pending    int           // Pending 是自上次提交以来的本地变更次数
-	Repairs    uint64        // Repairs 记录已经移除的无根残留目录数
-	Blocked    error         // Blocked 非空时禁止读取和修改不确定的文件树
+	Mu         sync.Mutex       // Mu 保护整个工作区快照，第一版优先保证正确性
+	Cache      *cache.Cache     // Cache 不保存正文，不写入 Git
+	comments   *commentCache    // comments 以独立预算缓存已解析正文，所有操作与文件写入共用 Mu
+	frames     map[string]Frame // frames 是最多 256 条的元数据缓存，整合变更时精确失效
+	Pending    int              // Pending 是自上次提交以来的本地变更次数
+	Repairs    uint64           // Repairs 记录已经移除的无根残留目录数
+	Blocked    error            // Blocked 非空时禁止读取和修改不确定的文件树
 	root       *os.Root
 	lock       *os.File
 	maxContent int
@@ -36,7 +37,7 @@ func Open(dir string, indexBudget, commentBudget int64, maxContent int) (*Store,
 	if err != nil {
 		return nil, err
 	}
-	s := &Store{root: r, Cache: cache.New(indexBudget), comments: newCommentCache(commentBudget), maxContent: maxContent}
+	s := &Store{root: r, Cache: cache.New(indexBudget), comments: newCommentCache(commentBudget), frames: make(map[string]Frame), maxContent: maxContent}
 	if err = s.safePath(".git"); err != nil {
 		r.Close()
 		return nil, err
@@ -51,7 +52,7 @@ func Open(dir string, indexBudget, commentBudget int64, maxContent int) (*Store,
 		s.Close()
 		return nil, err
 	}
-	for _, p := range []string{".git/commentb-trash", ".git/commentb-tmp", "comments"} {
+	for _, p := range []string{".git/commentb-trash", ".git/commentb-tmp", "comments", "frames"} {
 		if err = s.mkdirAll(p); err != nil {
 			s.Close()
 			return nil, err
@@ -158,8 +159,8 @@ func (s *Store) failDurability(err error) error {
 	return fmt.Errorf("%w: %v", ErrUnavailable, err)
 }
 
-// atomicCreate 先同步私有临时文件，再用硬链接独占发布，绝不覆盖现有文件
-func (s *Store) atomicCreate(p string, c Comment) error {
+// writeJSON 先同步临时文件，评论和新框独占发布；只有框元数据可原子替换。
+func (s *Store) writeJSON(p string, value any, replace bool) error {
 	if err := s.safePath(p); err != nil {
 		return err
 	}
@@ -173,7 +174,7 @@ func (s *Store) atomicCreate(p string, c Comment) error {
 		return err
 	}
 	defer s.root.Remove(tmp)
-	if err = json.NewEncoder(f).Encode(c); err != nil {
+	if err = json.NewEncoder(f).Encode(value); err != nil {
 		f.Close()
 		return err
 	}
@@ -184,7 +185,12 @@ func (s *Store) atomicCreate(p string, c Comment) error {
 	if err = f.Close(); err != nil {
 		return err
 	}
-	if err = s.root.Link(tmp, p); err != nil {
+	if replace {
+		err = s.root.Rename(tmp, p)
+	} else {
+		err = s.root.Link(tmp, p)
+	}
+	if err != nil {
 		return err
 	}
 	if err = s.syncDir(path.Dir(p)); err != nil {
@@ -277,6 +283,9 @@ func (s *Store) ReadLocked(frame, page, root, id string) (Comment, error) {
 	if err := scope(frame, page, root); err != nil {
 		return Comment{}, ErrInvalid
 	}
+	if _, err := s.FrameLocked(frame); err != nil {
+		return Comment{}, err
+	}
 	if _, err := index.ParseID(id); err != nil {
 		return Comment{}, ErrInvalid
 	}
@@ -302,6 +311,9 @@ func (s *Store) CreateLocked(frame, page, root string, replyTo *string, content 
 	}
 	if scope(frame, page, root) != nil || ValidateContent(content, s.maxContent) != nil || ValidateAuthor(author) != nil {
 		return c, ErrInvalid
+	}
+	if _, err := s.FrameLocked(frame); err != nil {
+		return c, err
 	}
 	if root == "" && replyTo != nil {
 		return c, ErrInvalid
@@ -348,7 +360,7 @@ func (s *Store) CreateLocked(frame, page, root string, replyTo *string, content 
 			p = dir + "/replies/" + id.String() + ".json"
 		}
 		c = Comment{Version: 1, ID: id.String(), FrameID: frame, PageKey: page, Author: author, RootID: rootID, ReplyTo: replyTo, Content: content, CreatedAt: time.Now().UnixMicro()}
-		if err = s.atomicCreate(p, c); errors.Is(err, os.ErrExist) {
+		if err = s.writeJSON(p, c, false); errors.Is(err, os.ErrExist) {
 			continue
 		}
 		if err != nil {
@@ -385,12 +397,16 @@ func (s *Store) moveToTrash(dir string) error {
 }
 
 // DeleteLocked 在锁内重新验证完整作者身份。根删除会级联移走所有作者的回复
-func (s *Store) DeleteLocked(frame, page, root, id, actor string, admin bool) error {
+func (s *Store) DeleteLocked(frame, page, root, id, actor string) error {
 	c, err := s.ReadLocked(frame, page, root, id)
 	if err != nil {
 		return err
 	}
-	if !admin && c.Author.ID != actor {
+	f, err := s.FrameLocked(frame)
+	if err != nil {
+		return err
+	}
+	if f.OwnerID != actor && c.Author.ID != actor {
 		return ErrForbidden
 	}
 	dir := rootPath(frame, PageHash(page), root)
@@ -500,6 +516,9 @@ func (s *Store) ListLocked(frame, page, root string, after *index.SortKey, desc 
 	if scope(frame, page, root) != nil || limit < 1 || limit > 500 {
 		return nil, false, ErrInvalid
 	}
+	if _, err := s.FrameLocked(frame); err != nil {
+		return nil, false, err
+	}
 	if root != "" {
 		if _, err := s.ReadLocked(frame, page, root, root); err != nil {
 			return nil, false, err
@@ -564,6 +583,10 @@ func ParseCommentPath(p string) (cache.Key, string, bool) {
 // InvalidatePathsLocked 只失效文件树发生变化的分区
 func (s *Store) InvalidatePathsLocked(paths []string) {
 	for _, p := range paths {
+		if id, ok := ParseFramePath(p); ok {
+			s.invalidateFrame(id)
+			continue
+		}
 		k, dir, ok := ParseCommentPath(p)
 		if !ok {
 			s.ClearCachesLocked()

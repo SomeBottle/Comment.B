@@ -84,7 +84,7 @@ func TestConcurrentCreation(t *testing.T) {
 func TestRootDeleteWinsLateReply(t *testing.T) {
 	a, b, root, _ := cluster(t)
 	a.Store.Mu.Lock()
-	err := a.Store.DeleteLocked("blog", "p", root.ID, root.ID, "github-1", false)
+	err := a.Store.DeleteLocked("blog", "p", root.ID, root.ID, "github-1")
 	a.Store.Mu.Unlock()
 	if err != nil {
 		t.Fatal(err)
@@ -114,7 +114,7 @@ func TestRootDeleteWinsLateReply(t *testing.T) {
 func TestDeletedReplyRetainsNewChild(t *testing.T) {
 	a, b, root, reply := cluster(t)
 	a.Store.Mu.Lock()
-	err := a.Store.DeleteLocked("blog", "p", root.ID, reply.ID, "github-1", false)
+	err := a.Store.DeleteLocked("blog", "p", root.ID, reply.ID, "github-1")
 	a.Store.Mu.Unlock()
 	if err != nil {
 		t.Fatal(err)
@@ -178,7 +178,7 @@ func TestIdempotentDeleteAndConflict(t *testing.T) {
 	a, b, root, reply := cluster(t)
 	for _, w := range []*Worker{a, b} {
 		w.Store.Mu.Lock()
-		err := w.Store.DeleteLocked("blog", "p", root.ID, reply.ID, "github-1", false)
+		err := w.Store.DeleteLocked("blog", "p", root.ID, reply.ID, "github-1")
 		w.Store.Mu.Unlock()
 		if err != nil {
 			t.Fatal(err)
@@ -227,7 +227,7 @@ func TestRestartCommitsDeletion(t *testing.T) {
 		t.Fatal(err)
 	}
 	f.Store.Mu.Lock()
-	err := f.Store.DeleteLocked("blog", "p", root.ID, root.ID, "github-1", false)
+	err := f.Store.DeleteLocked("blog", "p", root.ID, root.ID, "github-1")
 	f.Store.Mu.Unlock()
 	if err != nil {
 		t.Fatal(err)
@@ -250,7 +250,7 @@ func TestRestartCommitsDeletion(t *testing.T) {
 func TestInterruptedIntegrationRecovery(t *testing.T) {
 	a, b, root, _ := cluster(t)
 	a.Store.Mu.Lock()
-	err := a.Store.DeleteLocked("blog", "p", root.ID, root.ID, "github-1", false)
+	err := a.Store.DeleteLocked("blog", "p", root.ID, root.ID, "github-1")
 	a.Store.Mu.Unlock()
 	if err != nil {
 		t.Fatal(err)
@@ -380,7 +380,7 @@ func TestCommentCacheSyncInvalidation(t *testing.T) {
 	before := a.Store.CommentCacheStatsLocked()
 	a.Store.Mu.Unlock()
 	b.Store.Mu.Lock()
-	err := b.Store.DeleteLocked("blog", "p", root.ID, reply.ID, "github-1", false)
+	err := b.Store.DeleteLocked("blog", "p", root.ID, reply.ID, "github-1")
 	b.Store.Mu.Unlock()
 	if err != nil {
 		t.Fatal(err)
@@ -452,7 +452,7 @@ func TestCommentCacheSyncInvalidation(t *testing.T) {
 	}
 	a.Store.Mu.Unlock()
 	b.Store.Mu.Lock()
-	err = b.Store.DeleteLocked("blog", "p", root.ID, root.ID, "github-1", false)
+	err = b.Store.DeleteLocked("blog", "p", root.ID, root.ID, "github-1")
 	b.Store.Mu.Unlock()
 	if err != nil {
 		t.Fatal(err)
@@ -466,5 +466,85 @@ func TestCommentCacheSyncInvalidation(t *testing.T) {
 	}
 	if _, err = a.Store.ReadLocked("blog", "p", root.ID, child.ID); !errors.Is(err, store.ErrNotFound) {
 		t.Fatal("根删除后仍显示缓存回复", err)
+	}
+}
+
+// TestFrameMetadataSyncAndLateComments 验证新框归属随 Git 同步，删除框后迟到根和回复都会被移除。
+func TestFrameMetadataSyncAndLateComments(t *testing.T) {
+	a, b, _, _ := cluster(t)
+	a.Store.Mu.Lock()
+	frame, err := a.Store.CreateFrameLocked("github-1", "新网站", "简介", a.Config)
+	a.Store.Mu.Unlock()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cycle(t, a)
+	cycle(t, b)
+	b.Store.Mu.Lock()
+	synced, err := b.Store.FrameLocked(frame.ID)
+	if err != nil || synced.OwnerID != "github-1" {
+		t.Fatal("框归属未同步", err)
+	}
+	root, err := b.Store.CreateLocked(frame.ID, "p", "", nil, "他人评论", testutil.Author("2"))
+	b.Store.Mu.Unlock()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cycle(t, b)
+	cycle(t, a)
+	// B 已缓存元数据，A 的修改同步后必须使其失效并重新读取。
+	a.Store.Mu.Lock()
+	_, err = a.Store.UpdateFrameLocked(frame.ID, "github-1", "更新网站", "更新简介")
+	a.Store.Mu.Unlock()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cycle(t, a)
+	cycle(t, b)
+	b.Store.Mu.Lock()
+	synced, err = b.Store.FrameLocked(frame.ID)
+	b.Store.Mu.Unlock()
+	if err != nil || synced.Name != "更新网站" || synced.Intro != "更新简介" || synced.OwnerID != "github-1" {
+		t.Fatal("框修改同步后仍使用旧元数据", err)
+	}
+	a.Store.Mu.Lock()
+	// 框创建者无需全局管理员角色，就可以删除其他作者的评论。
+	if err = a.Store.DeleteLocked(frame.ID, "p", root.ID, root.ID, "github-1"); err != nil {
+		t.Fatal("拥有者不能管理本框评论", err)
+	}
+	if err = a.Store.DeleteFrameLocked(frame.ID, "github-1"); err != nil {
+		t.Fatal(err)
+	}
+	a.Store.Mu.Unlock()
+	// B 尚未同步删除，仍在已缓存框下写入迟到的新根和二级评论。
+	b.Store.Mu.Lock()
+	lateRoot, err := b.Store.CreateLocked(frame.ID, "another", "", nil, "迟到根", testutil.Author("2"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = b.Store.CreateLocked(frame.ID, "p", root.ID, &root.ID, "迟到回复", testutil.Author("2"))
+	b.Store.Mu.Unlock()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cycle(t, a)
+	cycle(t, b)
+	cycle(t, a)
+	for _, w := range []*Worker{a, b} {
+		w.Store.Mu.Lock()
+		if _, err = w.Store.FrameLocked(frame.ID); !errors.Is(err, store.ErrFrameNotFound) {
+			t.Fatal("同步后框复活", err)
+		}
+		if _, err = w.Store.ReadLocked(frame.ID, "another", lateRoot.ID, lateRoot.ID); !errors.Is(err, store.ErrFrameNotFound) {
+			t.Fatal("迟到根对外可见", err)
+		}
+		frames, err := w.Store.ListFramesLocked("github-1")
+		w.Store.Mu.Unlock()
+		if err != nil || len(frames) != 0 {
+			t.Fatal("删除框仍占用额度", err)
+		}
+		if _, err = os.Stat(filepath.Join(w.Config.DataDir, "comments", frame.ID)); !errors.Is(err, os.ErrNotExist) {
+			t.Fatal("未清理已删除框迟到文件", err)
+		}
 	}
 }

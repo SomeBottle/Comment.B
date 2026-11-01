@@ -163,16 +163,6 @@ func (a *Auth) CSRF(r *http.Request, s Session) bool {
 	return a.AllowedOrigin(r.Header.Get("Origin")) && hmac.Equal([]byte(r.Header.Get("X-CSRF-Token")), []byte(s.CSRF))
 }
 
-// IsAdmin 使用完整、区分来源的稳定身份进行授权
-func (a *Auth) IsAdmin(id string) bool {
-	for _, v := range a.Config.Admins {
-		if id == v {
-			return true
-		}
-	}
-	return false
-}
-
 // respond 输出统一 JSON，并防止缓存含会话信息的响应
 func respond(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")

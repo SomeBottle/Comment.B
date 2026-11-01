@@ -43,3 +43,32 @@ func TestLoadDefaultsAndBoundaries(t *testing.T) {
 		t.Fatalf("示例配置无效: %v", err)
 	}
 }
+
+// TestFrameCreatorPolicy 验证旧版开关和白名单语义，不再接受全局 admins 或静态 frames。
+func TestFrameCreatorPolicy(t *testing.T) {
+	c := Defaults()
+	if !c.OpenToEveryone || c.MaxFramesPerUser != 3 || !c.CanCreateFrame("github-1") {
+		t.Fatal("开放创建默认值错误")
+	}
+	c.OpenToEveryone = false
+	c.AllowedCreators = []string{"github-1"}
+	if !c.CanCreateFrame("github-1") || c.CanCreateFrame("github-2") || c.CanCreateFrame("alice") {
+		t.Fatal("白名单授权错误")
+	}
+	p := filepath.Join(t.TempDir(), "config.json")
+	for _, raw := range []string{`{"admins":[]}`, `{"frames":["blog"]}`, `{"allowed_creators":["alice"]}`, `{"allowed_creators":["github-001"]}`, `{"allowed_creators":["github-1","github-1"]}`, `{"max_frames_per_user":0}`, `{"max_frames_per_user":-1}`} {
+		if err := os.WriteFile(p, []byte(raw), 0600); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := Load(p); err == nil {
+			t.Fatal("接受无效创建策略", raw)
+		}
+	}
+	if err := os.WriteFile(p, []byte(`{"open_to_everyone":false,"allowed_creators":["github-123456"],"max_frames_per_user":2}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := Load(p)
+	if err != nil || !loaded.CanCreateFrame("github-123456") || loaded.CanCreateFrame("github-1") || loaded.MaxFramesPerUser != 2 {
+		t.Fatal("创建策略未正确加载", err)
+	}
+}
